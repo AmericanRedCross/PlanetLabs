@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+
+body {
+  background-color: #222;
+  color: #f5f5f5;
+  font-family: Arial;
+}
+
+pre {outline: 1px solid #ccc; padding: 5px; margin: 5px;
+color: #f5f5f5; }
+.string { color: blue; }
+.number { color: darkorange; }
+.boolean { color: green; }
+.null { color: red; }
+.key { color: magenta; }
+
+
+</style>
+
+<body>
+
+<script src="APIkey.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->
+<script>
+
+
+
+// formatting the output
+function output(inp) {
+    document.body.appendChild(document.createElement('pre')).innerHTML = inp;
+}
+function syntaxHighlight(json) {
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
+
+
+
+
+
+
+//planet labs url
+var url = "https://api.planet.com/v0/scenes/ortho/";
+
+// Bounds using GeoJSON for search results
+var intersects = JSON.stringify({
+      "type": "Feature",
+      "properties": {},
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              34.2333984375,
+              -17.182779056431826
+            ],
+            [
+              34.2333984375,
+              -13.88074584202559
+            ],
+            [
+              36.03515625,
+              -13.88074584202559
+            ],
+            [
+              36.03515625,
+              -17.182779056431826
+            ],
+            [
+              34.2333984375,
+              -17.182779056431826
+            ]
+          ]
+        ]
+      }
+    });
+
+// Back to shared code between WKT and GeoJSON
+
+var params = {
+    intersects: intersects,
+    order_by: 'acquired desc',
+    count: 1000,
+};
+
+// With Jquery
+
+var auth = "Basic " + btoa(key + ":");
+
+$.ajax({
+    url: url,
+    data: params,
+    headers: {
+        "Authorization": auth
+    },
+    success: function(data) {
+        // do something with data.features here
+
+        // log number of results displayed
+        document.body.appendChild(document.createElement('div')).innerHTML = data.features.length + " results";
+
+        // show only part of the results for each feature
+        //
+        $.each(data.features, function(index, feature){
+          var str = JSON.stringify(feature.properties, undefined, 4);
+          output(syntaxHighlight(str));
+        });
+
+        // show everything
+        //
+        // output(syntaxHighlight(JSON.stringify(data.features, undefined, 4)));
+
+    },
+});
+
+
+</script>
