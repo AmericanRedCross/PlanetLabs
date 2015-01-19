@@ -1,0 +1,23 @@
+{
+  "name": "PlanetLabs",
+  "version": "0.0.0",
+  "homepage": "https://github.com/AmericanRedCross/PlanetLabs",
+  "authors": [
+    "danbjoseph <danbjoseph@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "d3": "~3.5.3",
+    "leaflet": "~0.7.3",
+    "jquery": "~1",
+    "bootstrap": "~3.3.2",
+    "leaflet-draw": "~0.2.3"
+  }
+}

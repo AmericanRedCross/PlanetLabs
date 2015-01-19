@@ -1,0 +1,20 @@
+  body {
+    background-color: #222;
+    color: #f5f5f5;
+    font-family: Arial;
+  }
+
+  #map {
+    height: 400px;
+    width: 100%;
+
+  }
+
+
+  pre {outline: 1px solid #ccc; padding: 5px; margin: 5px;
+    color: #f5f5f5; }
+    .string { color: blue; }
+    .number { color: darkorange; }
+    .boolean { color: green; }
+    .null { color: red; }
+    .key { color: magenta; }
