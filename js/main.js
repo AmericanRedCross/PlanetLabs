@@ -1,14 +1,39 @@
-$('#key-request').modal(options);
+var windowH = $(window).height();
+$("#map").height(windowH);
+$("#infoWrapper").height(windowH);
 
+var formatAcquiredTime = d3.time.format('%d-%b-%Y, %H:%M UTC');
+
+//planet labs url
+var url = "https://api.planet.com/v0/scenes/ortho/";
 var key = "";
 
+// show modal for api key input
+$('#key-request').modal(options);
+
+// check if API key works
 function keysubmit(){
+  $('#input-api-btn').button('loading');
   key = ($('#input-api-key').val());
-  $('#key-request').modal('hide');
+  var auth = "Basic " + btoa(key + ":");
+  $.ajax({
+    url: url,
+    headers: {
+      Authorization: auth
+    },
+    success: function(data) {
+      // console.log(data);
+      $('#key-request').modal('hide');
+    },
+    error: function(error) {
+      // console.log(error);
+      $('#input-api-btn').button('reset');
+      $('#input-api-key').val('');
+      d3.select('#input-api-key').style('background', '#f2dede').attr("placeholder", "Hmm... that didn't seem to work. Please try entering your API key again.");
+    }
+  });
 }
 
-// add a function to test the key
-    
 
 
 // create basic leaflet map
@@ -37,7 +62,6 @@ var geocoder = L.Control.geocoder().addTo(map);
 geocoder.markGeocode = function(result) {
       this._map.fitBounds(result.bbox);
 };
-
 
 // draw functionality
 // ==================
@@ -82,35 +106,13 @@ map.on('draw:created', function (e) {
     searchScenes(e.layer.toGeoJSON());
 });
 
-// formatting the scene search output for pretty reading and adding as html to page
-function output(inp) {
-    d3.select("#scenes-list").append('pre').html(inp);
-}
-function syntaxHighlight(json) {
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        var cls = 'number';
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                cls = 'key';
-            } else {
-                cls = 'string';
-            }
-        } else if (/true|false/.test(match)) {
-            cls = 'boolean';
-        } else if (/null/.test(match)) {
-            cls = 'null';
-        }
-        return '<span class="' + cls + '">' + match + '</span>';
-    });
-}
+
 
 // planet labs API scene search
 function searchScenes(aoi){
-  //clear past search results from html page
-  $("#scenes-list").empty();
-  //planet labs url
-  var url = "https://api.planet.com/v0/scenes/ortho/";
+
+  $("#loading-wrapper").fadeIn();
+  
   // stringigy the polygon search area drawn to leaflet map
   var intersects = JSON.stringify(aoi);
   // set search parameters
@@ -119,9 +121,8 @@ function searchScenes(aoi){
     order_by: 'acquired desc', // order newest to oldest
     count: 1000, // set number of possible results to maximum
   };
-  // request scenes with Jquery
-  // API authorization key needs to be set/loaded from js/APIkey.js
   var auth = "Basic " + btoa(key + ":");
+  // request scenes
   $.ajax({
       url: url,
       data: params,
@@ -132,17 +133,38 @@ function searchScenes(aoi){
           // do something with data.features here
 
           // log number of results displayed
-          d3.select("#scenes-list").append('div').html(data.features.length + " results");
+          d3.select('#info-scene-count').html(data.features.length + " results");
+          // update listed scenes
+          var results = d3.select('#info-scene-list').selectAll('div')
+            .data(data.features, function(d){ return d['id']; });
+          results.enter().append('div').html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true);
+          results.exit().remove();
 
-          // show only part of the results for each feature
-          $.each(data.features, function(index, feature){
-            var str = JSON.stringify(feature.properties, undefined, 4);
-            output(syntaxHighlight(str));
-          });
+          $("#loading-wrapper").fadeOut(500);
 
-          // or use the followign to show everything
-          // output(syntaxHighlight(JSON.stringify(data.features, undefined, 4)));
+            // need to sort them
 
-      },
+            //  >>>>>>>>> draw all polygons on map using d3
+
+            //  >>>>>>>>> close loading box
+
+      }
+      //  >>>>>>>>> if error code
   });
 }
+
+function generateSceneHtml(sceneObject) {
+  var sceneId = sceneObject.id;
+  var acquired = formatAcquiredTime(new Date(sceneObject.properties.acquired));
+  var sceneHtml = "<span class='text-key'>Scene ID:</span> <span class='text-value'>" + sceneId +
+    "</span><br><span class='text-key'>Acquired:</span> <span class='text-value'>" + acquired + "</span><hr>";
+  return sceneHtml;  
+}
+
+
+// on window resize
+$(window).resize(function(){
+    windowH = $(window).height();
+    $("#map").height(windowH);
+    $("#infoWrapper").height(windowH); 
+})

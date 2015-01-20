@@ -40,23 +40,34 @@
                 <input type="text" class="form-control" id="input-api-key" placeholder="...">
               </div>
             </form>
-              <button type="button" onClick="keysubmit(); return false;" class="btn btn-default">Submit</button>
+              <button id="input-api-btn" type="button" data-loading-text="Testing..." onClick="keysubmit(); return false;" class="btn btn-default">Submit</button>
             
           </div>
         </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
 
-    
+    <div id="loading-wrapper" style="display:none;">
+      <div id="loading-progress">
+        <img id="loader" src="img/loader.gif" />
+      </div>
+    </div>
 
-    <div class="container">
-      
-      <div id="map"></div>
+    <div class="container-fluid noPadding">
+      <div class="col-xs-7 noPadding">
+        <div id="map"></div>
+      </div>
+      <div class="col-xs-5 noPadding">
+        <div id="infoWrapper">
+          <div id="info-header">
+            <h4><div id="info-scene-count">Please select an AOI on the map using the draw tools on the left. Search for a place by name using the search tool in the top right.</div></h4>
+          </div>
+          <div id="info-scene-list"></div>
+        </div>
+      </div>
     </div>
     <div class="container-fluid">
-      <div id="scenes-list"></div>
-
-    </div>
+      
 
 
 <!-- bower:js -->

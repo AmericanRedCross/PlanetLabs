@@ -2,22 +2,54 @@ body {
   background-color: #222;
 }
 
-
-#map {
-  height: 400px;
-  width: 100%;
-  z-index: 19
-
+.noPadding {
+  padding: 0px;
 }
 
-#scenes-list {
+#infoWrapper{
+    overflow: auto;
+    color: #f5f5f5;
+}
+
+.scene-box, #info-header {
+  padding: 12px 12px 0 12px;
+}
+
+.scene-box hr {
+  margin: 0;
+  margin-top: 3px;
+  border-color: #6d6e70;
+}
+
+.text-key {
+  color: #9f9fa3;
+}
+.text-value {
   color: #f5f5f5;
+  font-weight: bold;
 }
 
-pre {outline: 1px solid #ccc; padding: 5px; margin: 5px;
-  color: #f5f5f5; }
-  .string { color: blue; }
-  .number { color: darkorange; }
-  .boolean { color: green; }
-  .null { color: red; }
-  .key { color: magenta; }
+/*#scenes-list {
+  color: #f5f5f5;
+}*/
+
+#loading-wrapper{
+    position:absolute;
+    left:0;
+    right:0;
+    height:100%;
+    text-align: center;
+    z-index: 99999;
+    background: rgba(0,0,0,0.6);
+}
+#loader{
+    width: 150px;
+    margin: 30px 0;
+}
+#loading-progress{
+    margin:30px auto;
+    width: 210px;
+    border-radius: 4px;
+    background: #222;
+    text-align: center;
+}
