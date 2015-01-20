@@ -30,7 +30,27 @@
 
   <body>
 
+    <div id="key-request" class="modal fade" data-backdrop="static">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-body">
+            <form id="api-key-form">
+              <div class="form-group">
+                <label for="api-key">Planet Labs API key:</label>
+                <input type="text" class="form-control" id="input-api-key" placeholder="...">
+              </div>
+            </form>
+              <button type="button" onClick="keysubmit(); return false;" class="btn btn-default">Submit</button>
+            
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    
+
     <div class="container">
+      
       <div id="map"></div>
     </div>
     <div class="container-fluid">
@@ -50,7 +70,6 @@
 <script src="bower_components/leaflet-draw/dist/leaflet.draw.js"></script>
 <script src="bower_components/leaflet-draw/dist/leaflet.draw-src.js"></script>
 <script src="js/Control.Geocoder.js"></script>
-<script src="js/APIkey.js"></script>
 <script src="js/main.js"></script>
 
   </body>

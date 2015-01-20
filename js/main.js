@@ -1,3 +1,16 @@
+$('#key-request').modal(options);
+
+var key = "";
+
+function keysubmit(){
+  key = ($('#input-api-key').val());
+  $('#key-request').modal('hide');
+}
+
+// add a function to test the key
+    
+
+
 // create basic leaflet map
 // ========================
 // tile layer for base map
