@@ -14,6 +14,9 @@ body {
 .scene-box, #info-header {
   padding: 12px 12px 0 12px;
 }
+#info-sort-tools {
+  padding: 0 12px;
+}
 
 .scene-box hr {
   margin: 0;
@@ -27,6 +30,20 @@ body {
 .text-value {
   color: #f5f5f5;
   font-weight: bold;
+}
+.text-links {
+  color: #9f9fa3;
+}
+.clickable {
+  cursor: pointer;
+}
+
+.scene-default {
+  stroke: #ed1b2e;
+  stroke-width: 1.5;
+  fill: #f5f5f5;
+  fill-opacity: 0.1;
+  cursor: pointer;
 }
 
 /*#scenes-list {
