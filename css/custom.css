@@ -5,10 +5,17 @@ body {
 .noPadding {
   padding: 0px;
 }
+.hidden {
+  display: none;
+}
 
 #infoWrapper{
     overflow: auto;
     color: #f5f5f5;
+}
+#date-slider {
+  width: 80%;
+  margin: 12px auto;
 }
 
 .scene-box, #info-header {

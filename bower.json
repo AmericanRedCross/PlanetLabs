@@ -18,6 +18,7 @@
     "leaflet": "~0.7.3",
     "jquery": "~1",
     "bootstrap": "~3.3.2",
-    "leaflet-draw": "~0.2.3"
+    "leaflet-draw": "~0.2.3",
+    "nouislider": "~7.0.10"
   }
 }

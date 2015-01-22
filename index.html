@@ -11,6 +11,8 @@
 <!-- bower:css -->
 <link rel="stylesheet" href="bower_components/leaflet/dist/leaflet.css" />
 <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" />
+<link rel="stylesheet" href="bower_components/nouislider/distribute/jquery.nouislider.min.css" />
+<link rel="stylesheet" href="bower_components/nouislider/distribute/jquery.nouislider.pips.min.css" />
 <!-- endbower -->
 
 <link rel="stylesheet" href="bower_components/leaflet-draw/dist/leaflet.draw.css" />
@@ -63,7 +65,12 @@
             <h4><div id="info-scene-count">Please select an AOI on the map using the draw tools on the left. Search for a place by name using the search tool in the top right.</div></h4>
           </div>
           <div id="info-sort-tools" style="display:none;">
-            <span onClick="toggleSceneAcquiredOrder();" class="glyphicon glyphicon-sort clickable"></span> reverse order by date acquired
+            
+            <div id="date-slider"></div>
+            <div>Oldest scene: <span id="event-start"></span> | Newest Scene: <span id="event-end"></span></div>
+
+            <div><span onClick="toggleSceneAcquiredOrder();" class="glyphicon glyphicon-sort clickable"></span> reverse list order</div>
+
           </div>
           <div id="info-scene-list"></div>
         </div>
@@ -79,6 +86,7 @@
 <script src="bower_components/leaflet/dist/leaflet.js"></script>
 <script src="bower_components/leaflet/dist/leaflet-src.js"></script>
 <script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+<script src="bower_components/nouislider/distribute/jquery.nouislider.all.min.js"></script>
 <!-- endbower -->
 
 <script src="bower_components/leaflet-draw/dist/leaflet.draw.js"></script>

@@ -3,6 +3,7 @@ $("#map").height(windowH);
 $("#infoWrapper").height(windowH);
 
 var formatAcquiredTime = d3.time.format('%d-%b-%Y, %H:%M UTC');
+var formatCommas = d3.format(",");
 
 //planet labs url
 var url = "https://api.planet.com/v0/scenes/ortho/";
@@ -55,16 +56,16 @@ var map = L.map('map', {
     // better job of it
   });
 
-// add Geocoder
-// ============
+// add leaflet Geocoder search
+// ===========================
 var geocoder = L.Control.geocoder().addTo(map);
 // customize the geocoder result selection function so only centers map and doesn't add a marker
 geocoder.markGeocode = function(result) {
       this._map.fitBounds(result.bbox);
 };
 
-// draw functionality
-// ==================
+// leaflet draw functionality
+// ==========================
 // initialise the FeatureGroup to store editable layers
 var drawnItems = new L.FeatureGroup();
 // layer added after d3 scene extents group for ordering/display purposes
@@ -113,7 +114,7 @@ map.on('draw:created', function (e) {
 });
 
 
-// d3 overlay for scene boxes
+// d3 map overlay for scene boxes
 // ==========================
 function projectPoint(x, y) {
   var point = map.latLngToLayerPoint(new L.LatLng(y, x));
@@ -130,8 +131,6 @@ var svg = d3.select("#map").select("svg");
 // add leaflet draw layer
 map.addLayer(drawnItems);
 var sceneGroup = svg.append('g').attr("id", "d3scenes");
-
-
 
 function drawSceneBounds(data){
   var sceneData = data;
@@ -154,12 +153,80 @@ function drawSceneBounds(data){
 }
 
 
+// date slider
+// ===========
+// create a new date from a string, return as a timestamp.
+function timestamp(str){
+    return new Date(str).getTime();   
+}
+// write the date pretty
+var writeDate = d3.time.format('%d-%b-%Y');
+function setDate(value){
+  $(this).html(writeDate(new Date(+value)));
+  rangeChange();
+}
+function rangeChange(){
+  // get date range
+  var sliderValArray = $("#date-slider").val();
+  var minRange = +sliderValArray[0];
+  var maxRange = +sliderValArray[1];
+  // select scenes info-boxes outside range and hide them
+  var sceneBoxes = d3.select('#info-scene-list').selectAll('.scene-box');
+  sceneBoxes.classed("hidden", false);
+  sceneBoxes.filter(function(d){
+    var thisAcquired = timestamp(d.properties.acquired);
+    return thisAcquired <= minRange || thisAcquired >= maxRange;
+  }).classed("hidden", true);
+  // select mapped extents outside range and hide them
+  var sceneExtents = sceneGroup.selectAll("path");
+  sceneExtents.classed("hidden", false);
+  sceneExtents.filter(function(d){
+    var thisAcquired = timestamp(d.properties.acquired);
+    return thisAcquired <= minRange || thisAcquired >= maxRange;
+  }).classed("hidden", true);
+
+}
+// build the slider
+function setDateSlider(data){
+  var minDate = timestamp(data[0].properties.acquired);
+  var maxDate = timestamp(data[0].properties.acquired);
+  $.each(data, function(index, scene){
+    if(timestamp(scene.properties.acquired) > maxDate){
+      maxDate = timestamp(scene.properties.acquired);
+    }
+    if(timestamp(scene.properties.acquired) < minDate){
+      minDate = timestamp(scene.properties.acquired);
+    }
+  });
+  $("#date-slider").noUiSlider({
+    range: {
+      min: minDate,
+      max: maxDate
+    },
+    // steps of one day
+    step: 24 * 60 * 60 * 1000,
+    start: [minDate, maxDate],
+    // No decimals
+    format: wNumb({
+      decimals: 0
+    }),
+    // margin of one day
+    margin: 24 * 60 * 60 * 1000
+  }, true);
+
+  $("#date-slider").Link('lower').to($("#event-start"), setDate);
+  $("#date-slider").Link('upper').to($("#event-end"), setDate);
+
+}
+
 
 
 
 
 // planet labs API scene search
 // ============================
+var sortOrder = "";
+
 function searchScenes(aoi){
   $("#loading-wrapper").fadeIn();
   // stringigy the polygon search area drawn to leaflet map
@@ -183,35 +250,49 @@ function searchScenes(aoi){
 
           // log number of results displayed
           d3.select('#info-scene-count').html(data.features.length + " results");
-          // show sort tools
-          $("#info-sort-tools").show();
+          if (data.features.length == 0){
+            $("#info-sort-tools").hide();
+            // hide loading gif overlay
+            $("#loading-wrapper").fadeOut(500);
+          } else {
 
-          // update listed scenes
-          var results = d3.select('#info-scene-list').selectAll('div')
-            .data(data.features, function(d){ return d['id']; });
-          results.enter().append('div').html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true);
-          results.exit().remove();
+            // if API return limit is reached display note
+            if(data.features.length == 1000){
+              d3.select('#info-scene-count').html(formatCommas(data.features.length) + " results " +
+                "<small>(only the most recent 1,000 scenes listed, reduce size of search area to check for older scenes)</small>");
+            }
 
-          // scenes may be in new and old selection
-          // the list is not completey refreshed, only updated
-          // so needs to be resorted in descending order
-          sortOrder = "desc";
-          d3.select('#info-scene-list').selectAll('.scene-box').sort(function(a,b){
-            return new Date(b.properties.acquired) - new Date(a.properties.acquired);
-          });
+            // show sort tools
+            $("#info-sort-tools").show();
 
-          // draw polygons on map using d3
-          drawSceneBounds(data.features);
+            // update listed scenes
+            var results = d3.select('#info-scene-list').selectAll('div')
+              .data(data.features, function(d){ return d['id']; });
+            results.enter().append('div').html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true);
+            results.exit().remove();
 
-          // hide loading gif overlay
-          $("#loading-wrapper").fadeOut(500);
+            // scenes may be in new and old selection
+            // the list is not completey refreshed, only updated
+            // so needs to be resorted in descending order
+            sortOrder = "desc";
+            d3.select('#info-scene-list').selectAll('.scene-box').sort(function(a,b){
+              return new Date(b.properties.acquired) - new Date(a.properties.acquired);
+            });
 
+            // draw polygons on map using d3
+            drawSceneBounds(data.features);
+            // set date slider
+            setDateSlider(data.features);
+
+            // hide loading gif overlay
+            $("#loading-wrapper").fadeOut(500);
+          }
       }
       //  >>>>>>>>> if error code
   });
 }
 
-var sortOrder = "";
+
 
 function generateSceneHtml(sceneObject) {
   var sceneId = sceneObject.id;
