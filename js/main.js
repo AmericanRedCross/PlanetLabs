@@ -66,6 +66,9 @@ geocoder.markGeocode = function(result) {
 
 // leaflet draw functionality
 // ==========================
+
+var searchBounds = [];
+
 // initialise the FeatureGroup to store editable layers
 var drawnItems = new L.FeatureGroup();
 // layer added after d3 scene extents group for ordering/display purposes
@@ -111,6 +114,12 @@ map.on('draw:created', function (e) {
     drawnItems.addLayer(layer);
     // use polygon to search scenes from Planet Labs
     searchScenes(e.layer.toGeoJSON());
+    var theseBounds = d3.geo.bounds(e.layer.toGeoJSON());
+    searchBounds = [
+      [theseBounds[0][1],theseBounds[0][0]],
+      [theseBounds[1][1],theseBounds[1][0]]
+    ];
+    map.fitBounds(searchBounds);
 });
 
 
@@ -137,13 +146,27 @@ function drawSceneBounds(data){
   var mappedScenes = sceneGroup.selectAll("path").data(sceneData, function(d){ return d['id']; });
   mappedScenes.enter().append("path")
     .attr("class", "scene-default")
-    .attr("d",path)
-    .on("mouseover", function(d){
-      console.log(d);           
+    .attr("d", path)
+    .on("click", function(d){
+      // scroll to corresponding  scene-box
+      var selector = ".scene-box[data-id='" + d.id + "']";
+      $("#infoWrapper").scrollTo( $(selector), {
+        margin: true,
+        duration: 1000
+      });
     })
-    // .on("mouseout", function(d){ 
-    //   $('#tooltip').empty();
-    // })
+    .on("mouseover", function(d){
+      // highlight corresponding scene-box
+      var selector = ".scene-box[data-id='" + d.id + "']";
+      d3.select(selector).classed("highlightBorder", true);
+      // show 
+      d3.select(this).classed("thickBorder", true);
+    })
+    .on("mouseout", function(d){ 
+      var selector = ".scene-box[data-id='" + d.id + "']";
+      d3.select(selector).classed("highlightBorder", false);
+      d3.select(this).classed("thickBorder", false);
+    });
   function updateScenePaths(){
     mappedScenes.attr("d", path);
   }
@@ -151,6 +174,18 @@ function drawSceneBounds(data){
   // remove scenes outside of new bounding box
   mappedScenes.exit().remove();
 }
+
+function panToScene(sceneId){
+  var thisGeometry = [];
+  sceneGroup.selectAll("path").filter(function(d){
+    return d.id == sceneId;
+  }).each(function(d){
+    var bbox = turf.extent(d);
+    var leafletBounds = [ [ bbox[1], bbox[0] ], [ bbox[3], bbox[2] ] ];
+    map.fitBounds(leafletBounds, { padding: [150, 150]} );
+  });
+}
+
 
 
 // date slider
@@ -175,14 +210,14 @@ function rangeChange(){
   sceneBoxes.classed("hidden", false);
   sceneBoxes.filter(function(d){
     var thisAcquired = timestamp(d.properties.acquired);
-    return thisAcquired <= minRange || thisAcquired >= maxRange;
+    return thisAcquired < minRange || thisAcquired > maxRange;
   }).classed("hidden", true);
   // select mapped extents outside range and hide them
   var sceneExtents = sceneGroup.selectAll("path");
   sceneExtents.classed("hidden", false);
   sceneExtents.filter(function(d){
     var thisAcquired = timestamp(d.properties.acquired);
-    return thisAcquired <= minRange || thisAcquired >= maxRange;
+    return thisAcquired < minRange || thisAcquired > maxRange;
   }).classed("hidden", true);
 
 }
@@ -268,7 +303,23 @@ function searchScenes(aoi){
             // update listed scenes
             var results = d3.select('#info-scene-list').selectAll('div')
               .data(data.features, function(d){ return d['id']; });
-            results.enter().append('div').html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true);
+            results.enter().append('div')
+              .html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true)
+              .attr("data-id", function(d) { return d.id })
+              .on('mouseover', function(d) {
+                d3.select(this).classed("highlightBorder", true);
+                var thisScene = d3.select(this).attr("data-id");
+                sceneGroup.selectAll("path").filter(function(d){
+                  return d.id == thisScene;
+                }).classed("thickBorder", true);
+              })
+              .on('mouseout', function(d) {
+                d3.select(this).classed("highlightBorder", false);
+                var thisScene = d3.select(this).attr("data-id");
+                sceneGroup.selectAll("path").filter(function(d){
+                  return d.id == thisScene;
+                }).classed("thickBorder", false);
+              });
             results.exit().remove();
 
             // scenes may be in new and old selection
@@ -303,14 +354,13 @@ function generateSceneHtml(sceneObject) {
     "</span><br><span class='text-key'>Estimated cloud cover:</span> <span class='text-value'>" + cloudCover + 
     "</span><br>" +
     "<span class='text-links'>" +
-    "<a class='hidden' href='#'><span class='glyphicon glyphicon-map-marker' aria-hidden='true'></span> &nbsp;Identify on map</a>" +
+    "<span onClick='panToScene(" + '"' + sceneId + '"' + ");' class='glyphicon glyphicon-search glyphicon-custom clickable text-value' aria-hidden='true'></span> &nbsp;" +
     " | " +
     "<a target='_blank' href='" + sceneObject.properties.links.thumbnail + 
     "'><span class='glyphicon glyphicon-download-alt' aria-hidden='true'></span> &nbsp;thumbnail</a>" +
     " | " +
     "<a target='_blank' href='" + sceneObject.properties.links.full + 
-    "'><span class='glyphicon glyphicon-download-alt' aria-hidden='true'></span> &nbsp;GeoTIFF</a></span>" + 
-    "<hr>";
+    "'><span class='glyphicon glyphicon-download-alt' aria-hidden='true'></span> &nbsp;GeoTIFF</a></span>";
   return sceneHtml;
 }
 
@@ -330,7 +380,9 @@ function toggleSceneAcquiredOrder(){
   }
 }
 
-
+function zoomOut(){  
+  map.fitBounds(searchBounds);
+} 
 
 // on window resize
 $(window).resize(function(){

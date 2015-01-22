@@ -19,6 +19,7 @@
     "jquery": "~1",
     "bootstrap": "~3.3.2",
     "leaflet-draw": "~0.2.3",
-    "nouislider": "~7.0.10"
+    "nouislider": "~7.0.10",
+    "jquery.scrollTo": "~1.4.14"
   }
 }
