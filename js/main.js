@@ -223,35 +223,34 @@ function rangeChange(){
 }
 // build the slider
 function setDateSlider(data){
-  var minDate = timestamp(data[0].properties.acquired);
-  var maxDate = timestamp(data[0].properties.acquired);
-  $.each(data, function(index, scene){
-    if(timestamp(scene.properties.acquired) > maxDate){
-      maxDate = timestamp(scene.properties.acquired);
-    }
-    if(timestamp(scene.properties.acquired) < minDate){
-      minDate = timestamp(scene.properties.acquired);
-    }
-  });
-  $("#date-slider").noUiSlider({
-    range: {
-      min: minDate,
-      max: maxDate
-    },
-    // steps of one day
-    step: 24 * 60 * 60 * 1000,
-    start: [minDate, maxDate],
-    // No decimals
-    format: wNumb({
-      decimals: 0
-    }),
-    // margin of one day
-    margin: 24 * 60 * 60 * 1000
-  }, true);
+    var minDate = timestamp(data[0].properties.acquired);
+    var maxDate = timestamp(data[0].properties.acquired);
+    $.each(data, function(index, scene){
+      if(timestamp(scene.properties.acquired) > maxDate){
+        maxDate = timestamp(scene.properties.acquired);
+      }
+      if(timestamp(scene.properties.acquired) < minDate){
+        minDate = timestamp(scene.properties.acquired);
+      }
+    });
+    $("#date-slider").noUiSlider({
+      range: {
+        min: minDate,
+        max: maxDate
+      },
+      // steps of one day
+      step: 24 * 60 * 60 * 1000,
+      start: [minDate, maxDate],
+      // No decimals
+      format: wNumb({
+        decimals: 0
+      }),
+      // margin of one day
+      margin: 24 * 60 * 60 * 1000
+    }, true);
 
-  $("#date-slider").Link('lower').to($("#event-start"), setDate);
-  $("#date-slider").Link('upper').to($("#event-end"), setDate);
-
+    $("#date-slider").Link('lower').to($("#event-start"), setDate);
+    $("#date-slider").Link('upper').to($("#event-end"), setDate);
 }
 
 
@@ -275,72 +274,62 @@ function searchScenes(aoi){
   var auth = "Basic " + btoa(key + ":");
   // request scenes
   $.ajax({
-      url: url,
-      data: params,
-      headers: {
-          "Authorization": auth
-      },
-      success: function(data) {
-          // do something with data.features here
+    url: url,
+    data: params,
+    headers: {
+      "Authorization": auth
+    },
+    success: function(data) {
+         // do something with data.features here
 
           // log number of results displayed
-          d3.select('#info-scene-count').html(data.features.length + " results");
-          if (data.features.length == 0){
-            $("#info-sort-tools").hide();
-            // hide loading gif overlay
-            $("#loading-wrapper").fadeOut(500);
-          } else {
+          d3.select('#info-scene-count').html(data.features.length + " results" +
+            ((data.features.length == 1000) ? " <small>(only the most recent 1,000 scenes listed, reduce size of search area to check for older scenes)</small>" : ""));
+          
+          // set date slider
+          if(data.features.length > 0) {
+            setDateSlider(data.features);
+          }
 
-            // if API return limit is reached display note
-            if(data.features.length == 1000){
-              d3.select('#info-scene-count').html(formatCommas(data.features.length) + " results " +
-                "<small>(only the most recent 1,000 scenes listed, reduce size of search area to check for older scenes)</small>");
-            }
-
-            // show sort tools
-            $("#info-sort-tools").show();
-
-            // update listed scenes
-            var results = d3.select('#info-scene-list').selectAll('div')
-              .data(data.features, function(d){ return d['id']; });
+          // update listed scenes
+          var results = d3.select('#info-scene-list').selectAll('div')
+            .data(data.features, function(d){ return d['id']; });
             results.enter().append('div')
-              .html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true)
-              .attr("data-id", function(d) { return d.id })
-              .on('mouseover', function(d) {
-                d3.select(this).classed("highlightBorder", true);
-                var thisScene = d3.select(this).attr("data-id");
-                sceneGroup.selectAll("path").filter(function(d){
-                  return d.id == thisScene;
-                }).classed("thickBorder", true);
-              })
-              .on('mouseout', function(d) {
-                d3.select(this).classed("highlightBorder", false);
-                var thisScene = d3.select(this).attr("data-id");
-                sceneGroup.selectAll("path").filter(function(d){
-                  return d.id == thisScene;
-                }).classed("thickBorder", false);
-              });
+            .html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true)
+            .attr("data-id", function(d) { return d.id })
+            .on('mouseover', function(d) {
+              d3.select(this).classed("highlightBorder", true);
+              var thisScene = d3.select(this).attr("data-id");
+              sceneGroup.selectAll("path").filter(function(d){
+                return d.id == thisScene;
+              }).classed("thickBorder", true);
+            })
+            .on('mouseout', function(d) {
+              d3.select(this).classed("highlightBorder", false);
+              var thisScene = d3.select(this).attr("data-id");
+              sceneGroup.selectAll("path").filter(function(d){
+                return d.id == thisScene;
+              }).classed("thickBorder", false);
+            });
             results.exit().remove();
 
-            // scenes may be in new and old selection
-            // the list is not completey refreshed, only updated
-            // so needs to be resorted in descending order
-            sortOrder = "desc";
-            d3.select('#info-scene-list').selectAll('.scene-box').sort(function(a,b){
-              return new Date(b.properties.acquired) - new Date(a.properties.acquired);
-            });
+          // scenes may be in new and old selection
+          // the list is not completey refreshed, only updated
+          // so needs to be resorted in descending order
+          sortOrder = "desc";
+          d3.select('#info-scene-list').selectAll('.scene-box').sort(function(a,b){
+            return new Date(b.properties.acquired) - new Date(a.properties.acquired);
+          });
 
-            // draw polygons on map using d3
-            drawSceneBounds(data.features);
-            // set date slider
-            setDateSlider(data.features);
+          // draw polygons on map using d3
+          drawSceneBounds(data.features);   
 
-            // hide loading gif overlay
-            $("#loading-wrapper").fadeOut(500);
-          }
-      }
+          // hide loading gif overlay
+          $("#loading-wrapper").fadeOut(500);
+
+        }
       //  >>>>>>>>> if error code
-  });
+    });
 }
 
 
