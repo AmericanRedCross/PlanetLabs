@@ -30,6 +30,14 @@ body {
 .scene-box.highlightBorder {
   border-color: #e31a1c;
 }
+.scene-box div {
+  display: inline-block;
+}
+.scene-box img {
+  display: inline-block;
+  vertical-align: top;
+  height:100px;
+}
 
 #info-sort-tools {
   padding: 0 12px;

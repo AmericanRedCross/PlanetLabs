@@ -43,7 +43,7 @@
               </div>
             </form>
               <button id="input-api-btn" type="button" data-loading-text="Testing..." onClick="keysubmit(); return false;" class="btn btn-default">Submit</button>
-            
+
           </div>
         </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
@@ -57,7 +57,7 @@
 
     <div class="container-fluid noPadding">
       <div class="col-xs-7 noPadding">
-        <button class="btn btn-sm btn-zoom" type="button" onClick="zoomOut();"><span class="glyphicon glyphicon-zoom-out"></span> search extent</button> 
+        <button class="btn btn-sm btn-zoom" type="button" onClick="zoomOut();"><span class="glyphicon glyphicon-zoom-out"></span> search extent</button>
         <div id="map"></div>
       </div>
       <div class="col-xs-5 noPadding">
@@ -66,9 +66,9 @@
             <h4><div id="info-scene-count">Please select an AOI on the map using the draw tools on the left. Search for a place by name using the search tool in the top right.</div></h4>
           </div>
           <div id="info-sort-tools" style="display:none;">
-            
+
             <div id="date-slider"></div>
-            <div>Scenes acquired from <span id="event-start"></span> to <span id="event-end"></span></div>
+            <div><span id="event-scenecount"></span> scenes acquired from <span id="event-start"></span> to <span id="event-end"></span></div>
 
             <div><span onClick="toggleSceneAcquiredOrder();" class="glyphicon glyphicon-sort clickable"></span> reverse list order</div>
 
@@ -78,7 +78,7 @@
       </div>
     </div>
 
-      
+
 
 
 <!-- bower:js -->
@@ -99,10 +99,3 @@
 
   </body>
 </html>
-
-
-
-
-
-
-

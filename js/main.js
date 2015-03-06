@@ -8,6 +8,7 @@ var formatCommas = d3.format(",");
 //planet labs url
 var url = "https://api.planet.com/v0/scenes/ortho/";
 var key = "";
+var auth = "";
 
 // show modal for api key input
 $('#key-request').modal(options);
@@ -16,7 +17,7 @@ $('#key-request').modal(options);
 function keysubmit(){
   $('#input-api-btn').button('loading');
   key = ($('#input-api-key').val());
-  var auth = "Basic " + btoa(key + ":");
+  auth = "Basic " + btoa(key + ":");
   $.ajax({
     url: url,
     headers: {
@@ -42,7 +43,7 @@ function keysubmit(){
 // tile layer for base map
 var hotUrl = 'http://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
   hotAttribution = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, Tiles from <a href="http://hot.openstreetmap.org/" target="_blank">H.O.T.</a>',
-  hotLayer = L.tileLayer(hotUrl, {attribution: hotAttribution}); 
+  hotLayer = L.tileLayer(hotUrl, {attribution: hotAttribution});
 // initialize map w options
 var map = L.map('map', {
     layers: [hotLayer],
@@ -159,10 +160,10 @@ function drawSceneBounds(data){
       // highlight corresponding scene-box
       var selector = ".scene-box[data-id='" + d.id + "']";
       d3.select(selector).classed("highlightBorder", true);
-      // show 
+      // show
       d3.select(this).classed("thickBorder", true);
     })
-    .on("mouseout", function(d){ 
+    .on("mouseout", function(d){
       var selector = ".scene-box[data-id='" + d.id + "']";
       d3.select(selector).classed("highlightBorder", false);
       d3.select(this).classed("thickBorder", false);
@@ -192,7 +193,7 @@ function panToScene(sceneId){
 // ===========
 // create a new date from a string, return as a timestamp.
 function timestamp(str){
-    return new Date(str).getTime();   
+    return new Date(str).getTime();
 }
 // write the date pretty
 var writeDate = d3.time.format('%d-%b-%Y');
@@ -220,6 +221,10 @@ function rangeChange(){
     return thisAcquired < minRange || thisAcquired > maxRange;
   }).classed("hidden", true);
 
+  var visibleArray = d3.select('#info-scene-list').selectAll('.scene-box').filter(function(d){
+    return d3.select(this).classed("hidden") !== true;
+  });
+  $("#event-scenecount").html(visibleArray[0].length);
 }
 // build the slider
 function setDateSlider(data){
@@ -254,6 +259,29 @@ function setDateSlider(data){
 }
 
 
+// fetch and display thumbnail
+// ============================
+// request thumbnail from planet labs
+function getThumbnail(id, url){
+  var selector = ".scene-box[data-id='" + id + "']";
+  d3.select(selector).append('img').attr('src', 'img/loader.gif');
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.setRequestHeader('Authorization', auth);
+  xhr.responseType = 'arraybuffer';
+  xhr.onload = function(e) {
+      imageSrc = "data:image/png;base64," + base64ArrayBuffer(e.currentTarget.response);
+      displayThumbnail(id, imageSrc);
+  };
+  xhr.send();
+}
+
+// display thumbnail on page in the scene-box
+function displayThumbnail(id, image64){
+  var selector = ".scene-box[data-id='" + id + "']";
+  d3.select(selector).select('img').attr('src', image64);
+}
+
 
 
 
@@ -285,14 +313,9 @@ function searchScenes(aoi){
           // log number of results displayed
           d3.select('#info-scene-count').html(data.features.length + " results" +
             ((data.features.length == 1000) ? " <small>(only the most recent 1,000 scenes listed, reduce size of search area to check for older scenes)</small>" : ""));
-          
-          // set date slider
-          if(data.features.length > 0) {
-            setDateSlider(data.features);
-          }
 
           // update listed scenes
-          var results = d3.select('#info-scene-list').selectAll('div')
+          var results = d3.select('#info-scene-list').selectAll('.scene-box')
             .data(data.features, function(d){ return d['id']; });
             results.enter().append('div')
             .html(function(d) { return generateSceneHtml(d); }).classed('scene-box', true)
@@ -322,7 +345,15 @@ function searchScenes(aoi){
           });
 
           // draw polygons on map using d3
-          drawSceneBounds(data.features);   
+          drawSceneBounds(data.features);
+
+          // set date slider
+          if(data.features.length > 1) {
+            $("#info-sort-tools").show();
+            setDateSlider(data.features);
+          } else {
+            $("#info-sort-tools").hide();
+          }
 
           // hide loading gif overlay
           $("#loading-wrapper").fadeOut(500);
@@ -338,18 +369,18 @@ function generateSceneHtml(sceneObject) {
   var sceneId = sceneObject.id;
   var acquired = formatAcquiredTime(new Date(sceneObject.properties.acquired));
   var cloudCover = sceneObject.properties.cloud_cover.estimated;
-  var sceneHtml = "<span class='text-key'>Scene ID:</span> <span class='text-value'>" + sceneId +
-    "</span><br><span class='text-key'>Acquired:</span> <span class='text-value'>" + acquired + 
-    "</span><br><span class='text-key'>Estimated cloud cover:</span> <span class='text-value'>" + cloudCover + 
+  var sceneHtml = "<div><span class='text-key'>Scene ID:</span> <span class='text-value'>" + sceneId +
+    "</span><br><span class='text-key'>Acquired:</span> <span class='text-value'>" + acquired +
+    "</span><br><span class='text-key'>Estimated cloud cover:</span> <span class='text-value'>" + cloudCover +
     "</span><br>" +
     "<span class='text-links'>" +
     "<span onClick='panToScene(" + '"' + sceneId + '"' + ");' class='glyphicon glyphicon-search glyphicon-custom clickable text-value' aria-hidden='true'></span> &nbsp;" +
     " | " +
-    "<a target='_blank' href='" + sceneObject.properties.links.thumbnail + 
-    "'><span class='glyphicon glyphicon-download-alt' aria-hidden='true'></span> &nbsp;thumbnail</a>" +
+    "<span onClick='getThumbnail(" + '"' + sceneId + '", "' + sceneObject.properties.links.thumbnail  + '"' + ");' class='clickable'>" +
+    "<span class='glyphicon glyphicon-picture' aria-hidden='true'></span> &nbsp;load thumbnail</span>" +
     " | " +
-    "<a target='_blank' href='" + sceneObject.properties.links.full + 
-    "'><span class='glyphicon glyphicon-download-alt' aria-hidden='true'></span> &nbsp;GeoTIFF</a></span>";
+    "<a target='_blank' href='" + sceneObject.properties.links.full +
+    "'><span class='glyphicon glyphicon-download-alt' aria-hidden='true'></span> &nbsp;Visual</a></span></div>";
   return sceneHtml;
 }
 
@@ -369,13 +400,66 @@ function toggleSceneAcquiredOrder(){
   }
 }
 
-function zoomOut(){  
+function zoomOut(){
   map.fitBounds(searchBounds);
-} 
+}
 
 // on window resize
 $(window).resize(function(){
     windowH = $(window).height();
     $("#map").height(windowH);
-    $("#infoWrapper").height(windowH); 
+    $("#infoWrapper").height(windowH);
 })
+
+// encode arrayBuffer response to base64
+function base64ArrayBuffer(arrayBuffer) {
+  var base64    = ''
+  var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+  var bytes         = new Uint8Array(arrayBuffer)
+  var byteLength    = bytes.byteLength
+  var byteRemainder = byteLength % 3
+  var mainLength    = byteLength - byteRemainder
+
+  var a, b, c, d
+  var chunk
+
+  // Main loop deals with bytes in chunks of 3
+  for (var i = 0; i < mainLength; i = i + 3) {
+    // Combine the three bytes into a single integer
+    chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2]
+
+    // Use bitmasks to extract 6-bit segments from the triplet
+    a = (chunk & 16515072) >> 18 // 16515072 = (2^6 - 1) << 18
+    b = (chunk & 258048)   >> 12 // 258048   = (2^6 - 1) << 12
+    c = (chunk & 4032)     >>  6 // 4032     = (2^6 - 1) << 6
+    d = chunk & 63               // 63       = 2^6 - 1
+
+    // Convert the raw binary segments to the appropriate ASCII encoding
+    base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d]
+  }
+
+  // Deal with the remaining bytes and padding
+  if (byteRemainder == 1) {
+    chunk = bytes[mainLength]
+
+    a = (chunk & 252) >> 2 // 252 = (2^6 - 1) << 2
+
+    // Set the 4 least significant bits to zero
+    b = (chunk & 3)   << 4 // 3   = 2^2 - 1
+
+    base64 += encodings[a] + encodings[b] + '=='
+  } else if (byteRemainder == 2) {
+    chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1]
+
+    a = (chunk & 64512) >> 10 // 64512 = (2^6 - 1) << 10
+    b = (chunk & 1008)  >>  4 // 1008  = (2^6 - 1) << 4
+
+    // Set the 2 least significant bits to zero
+    c = (chunk & 15)    <<  2 // 15    = 2^4 - 1
+
+    base64 += encodings[a] + encodings[b] + encodings[c] + '='
+  }
+
+  return base64
+}
